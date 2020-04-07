@@ -1,5 +1,9 @@
 import nltk
+from nltk.tag import pos_tag
+from nltk.corpus import stopwords
 from enum import Enum
+
+import time
 
 class IntoxicationLevel(Enum):
     TIPSY = 2
@@ -33,7 +37,9 @@ class IntoxicationLevel(Enum):
 class WordFinder(object):
 
     def __init__(self):
-        pass
+        # Construct a set of english stopwords that will be removed before
+        # finding word frequencies
+        self.stopwords = set(stopwords.words('english')) 
 
     def to_text(self, subtitles):
         return "\n".join([subtitle.content for subtitle in subtitles])
@@ -41,17 +47,31 @@ class WordFinder(object):
     def get_words(self, subtitles, minimum_frequency, maximum_frequency):
         text = self.to_text(subtitles)
 
+        # Get words list from full subtitles text 
         words = nltk.word_tokenize(text)
+
+        # Perform POS tagging of our words, get only NOUNS
+        tags = pos_tag(words)
+        nouns = set([word for word, tag in tags if tag.startswith('NN')])
+
+        # Remove all words shorter than 1 character and all numbers
         words = [word for word in words if len(word) > 1]
         words = [word for word in words if not word.isnumeric()]
+
+        # Lowercase all words and remove stopwords
         words = [word.lower() for word in words]
+        words = [word for word in words if word not in self.stopwords]
 
         frequency_distribution = nltk.FreqDist(words)
         frequency_distribution = frequency_distribution.most_common(None)
 
         possible_words = []
         for word, frequency in frequency_distribution:
+            # Skip words that don't appear enough times or are not nouns
             if frequency >= maximum_frequency or frequency < minimum_frequency:
                 continue
+            if word not in nouns:
+                continue
+            
             possible_words.append((word, frequency))
         return possible_words
