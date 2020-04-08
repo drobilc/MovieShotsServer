@@ -6,6 +6,7 @@ class PodnapisiNet(object):
     def __init__(self):
         self.MAIN_URL = "https://www.podnapisi.net"
         self.ADVANCED_SEARCH_URL = self.MAIN_URL + "/subtitles/search/advanced"
+        self.SUGGESTIONS_URL = self.MAIN_URL + "/en/moviedb/suggestions"
 
         self.session = requests.Session()
     
@@ -36,3 +37,10 @@ class PodnapisiNet(object):
         response = self.session.get(self.ADVANCED_SEARCH_URL, params=search_parameters)
         subtitles = self.parse_subtitles(response.text)
         return subtitles
+    
+    def get_suggestions(self, keywords):
+        search_parameters = {
+            "keywords": keywords,
+        }
+        response = self.session.get(self.SUGGESTIONS_URL, params=search_parameters)
+        return response.json()
