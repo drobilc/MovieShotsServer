@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS, cross_origin
 
 from downloader import SubtitleDownloader
-from generator import WordFinder, IntoxicationLevel
+from generator import WordFinder
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -12,20 +12,12 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 downloader = SubtitleDownloader()
 word_finder = WordFinder()
 
-@app.route('/<movie>/<intoxication>/<int:number_of_players>')
+@app.route('/<movie>/<int:intoxication_level>/<int:number_of_players>')
 @cross_origin()
-def hello_world(movie, intoxication, number_of_players):
-    # Convert the received intoxication level to enum
-    intoxication_level = IntoxicationLevel[intoxication.upper()]
-    next_intoxication_level = intoxication_level.next_level()
-
-    # Get current intoxication level number of shots and next level number of shots
-    minimum_number_of_shots = intoxication_level.value
-    maximum_number_of_shots = next_intoxication_level.value
-
+def hello_world(movie, intoxication_level, number_of_players):
     # Download subtitles from podnapisi.net with movie name
     subtitles, subtitle_generator = downloader.get_subtitles(movie)
-    possible_words = word_finder.get_words(subtitle_generator, minimum_number_of_shots, maximum_number_of_shots)
+    possible_words = word_finder.get_words(subtitle_generator, intoxication_level, intoxication_level + 1)
 
     selected_words = possible_words[:number_of_players]
 
