@@ -24,5 +24,5 @@ class SubtitlesNotFoundException(ApiException):
         super().__init__(6, "Subtitles for movie {} not found".format(movie_title))
 
 class GameGenerationException(ApiException):
-    def __init__(self):
-        super().__init__(7, "The drinking game could not be generated")
+    def __init__(self, reason=""):
+        super().__init__(7, "The drinking game could not be generated. {}".format(reason))

@@ -1,10 +1,12 @@
 from podnapisi import PodnapisiNet
+from exceptions import *
 import requests
 import zipfile
 import glob
 import srt
 import os
 import shutil
+import re
 
 class SubtitleDownloader(object):
 
@@ -48,7 +50,13 @@ class SubtitleDownloader(object):
     
     def get_subtitles(self, keywords):
         subtitles = self.subtitle_api.search(keywords)
+
+        if len(subtitles) <= 0:
+            raise MovieNotFoundException(keywords)
+
+        movie = Movie(**subtitles[0])
+
         path, extracted_path = self.download_subtitles(subtitles[0])
         subtitle = self.parse_srt_file(path)
         shutil.rmtree(extracted_path)
-        return subtitles[0], subtitle
+        return movie, subtitle

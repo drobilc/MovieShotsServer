@@ -53,7 +53,7 @@ class DrinkingGame(object):
 
         # If there are not words at all to choose from, raise an exception
         if (len(non_exact_occurrences) + len(exact_occurrences)) < self.number_of_players:
-            raise GameGenerationException
+            raise GameGenerationException("There are not enough words for all players.")
 
         # Choose at most number_of_players of exact occurences and then add a
         # random selection of words with non exact occurences
@@ -137,11 +137,12 @@ class DrinkingGame(object):
         #   there is a third option available, repeat_words, which will simply
         #   repeat words and can be used instead of the choose_less_or_more
         #   function
-        try:
+        """try:
             self.words = self.choose_less_or_more(common_words)
         except Exception as e:
             # The words could not be selected, try different function
-            self.words = self.multiple_words(common_words)
+            self.words = self.multiple_words(common_words)"""
+        self.words = self.choose_less_or_more(common_words)
         
         self.bonus_words = self.choose_bonus_words(common_words)
     
@@ -154,7 +155,7 @@ class DrinkingGame(object):
             selected_words.append(player_words)
 
         return {
-            # "movie": self.movie.to_dict(),
+            "movie": self.movie.to_dict(),
             "words": selected_words,
             "bonus_words": [{"word": word, "occurrences": occurrences} for word, occurrences in self.bonus_words]
         }

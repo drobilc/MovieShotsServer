@@ -7,6 +7,7 @@ import zipfile
 import srt
 import shutil
 from exceptions import *
+from subtitle_services.movie import Movie
 
 class OpenSubtitles(object):
     
@@ -19,6 +20,7 @@ class OpenSubtitles(object):
         subtitles = []
 
         html = BeautifulSoup(response, 'html.parser')
+        print(html)
 
         results_table = html.find('table', {'id': 'search_results'})
         result_rows = results_table.find_all('tr')
@@ -38,7 +40,6 @@ class OpenSubtitles(object):
                 continue
 
             subtitle_id = id_matches.group(1)
-            # download_url = "https://dl.opensubtitles.org/en/download/sub/{}".format(subtitle_id)
             download_url = "https://www.opensubtitles.org/en/subtitleserve/sub/{}".format(subtitle_id)
 
             subtitles.append({
@@ -55,13 +56,16 @@ class OpenSubtitles(object):
         if len(suggestions) <= 0:
             raise MovieNotFoundException(keyword)
 
-        first_suggestion = suggestions[0]
-        movie_id = first_suggestion['id']
+        movie_id = suggestions[0].id
 
         url = f'https://www.opensubtitles.org/en/search/sublanguageid-eng/idmovie-{movie_id}/sort-7/asc-0'
         response = self.session.get(url)
+
         subtitles = self.parse_subtitles(response.text)
-        return subtitles
+        if len(subtitles) <= 0:
+            raise SubtitlesNotFoundException(keyword)
+
+        return suggestions[0], subtitles
     
     def get_suggestions(self, keyword):
         search_parameters = {
@@ -70,9 +74,12 @@ class OpenSubtitles(object):
             "SubLanguageID": "eng"
         }
         response = self.session.get(self.SUGGESTIONS_URL, params=search_parameters)
-        return response.json()
+        suggestions = []
+        for suggestion in response.json():
+            suggestions.append(Movie(**suggestion))
+        return suggestions
     
-    def download_subtitle(self, subtitle, temporary_path='./subtitles'):
+    def download(self, subtitle, temporary_path='./subtitles'):
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
             "accept-encoding": "gzip, deflate, br",
@@ -113,7 +120,7 @@ class OpenSubtitles(object):
         # Read first found subtitle file
         subtitle_generator = None
 
-        with open(subtitle_file, 'r', encoding='utf-8') as subtitle_file:
+        with open(subtitle_file, 'r') as subtitle_file:
             file_content = subtitle_file.read()
             subtitle_generator = srt.parse(file_content)
 
