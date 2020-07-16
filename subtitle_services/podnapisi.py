@@ -87,7 +87,7 @@ class PodnapisiNet(object):
         # Read first found subtitle file
         subtitle_generator = None
 
-        with open(subtitle_file, 'r') as subtitle_file:
+        with open(subtitle_file, 'r', encoding='utf-8') as subtitle_file:
             file_content = subtitle_file.read()
             subtitle_generator = srt.parse(file_content)
 
