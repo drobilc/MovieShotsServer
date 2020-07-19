@@ -48,7 +48,7 @@ class PodnapisiNet(object):
         if len(subtitles) <= 0:
             raise SubtitlesNotFoundException(keyword)
 
-        movie = Movie(id=0, name=subtitles[0]['title'])
+        movie = Movie(0, subtitles[0]['title'])
         return movie, subtitles
     
     def get_suggestions(self, keywords, movie_type='', seasons='', episodes='', year=''):
