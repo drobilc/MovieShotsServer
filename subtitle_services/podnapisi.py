@@ -51,16 +51,40 @@ class PodnapisiNet(object):
         movie = Movie(id=0, name=subtitles[0]['title'])
         return movie, subtitles
     
-    def get_suggestions(self, keywords):
-        search_parameters = {
-            "keywords": keywords,
+    def get_suggestions(self, keywords, movie_type='', seasons='', episodes='', year=''):
+        headers = {
+            'Host': 'www.podnapisi.net',
+            'Referer': 'https://www.podnapisi.net/',
+            'X-Requested-With': 'XMLHttpRequest',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
         }
-        response = self.session.get(self.SUGGESTIONS_URL, params=search_parameters)
-
-        suggestions = []
-        for suggestion in response.json()[1]:
-            suggestions.append(Movie(id=0, name=suggestion))
-        return suggestions
+        url = 'https://www.podnapisi.net/moviedb/search/'
+        parameters = {
+            'keywords': keywords,
+            'movie_type': movie_type,
+            'seasons': seasons,
+            'episodes': episodes,
+            'year': year
+        }
+        response = self.session.get(url, headers=headers, params=parameters)
+        received_json = response.json()
+        print(received_json)
+        
+        movies = []
+        for movie in received_json['data']:
+            movie_id = movie['id']
+            movie_title = movie['title']
+            movie_year = movie['year']
+            movie_cover = 'https://www.podnapisi.net{}'.format(movie['posters']['small'])
+            movies.append(
+                Movie(
+                    movie_id,
+                    movie_title,
+                    year=movie_year,
+                    cover=movie_cover
+                )
+            )
+        return movies
     
     def download(self, subtitle, temporary_path='./subtitles'):
         # Download zip file from the server

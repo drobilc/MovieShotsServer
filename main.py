@@ -10,8 +10,8 @@ import re
 app = Flask(__name__)
 
 # Global variables that are available for all requests
-# subtitle_service = PodnapisiNet()
-subtitle_service = OpenSubtitles()
+subtitle_service = PodnapisiNet()
+# subtitle_service = OpenSubtitles()
 
 @app.errorhandler(ApiException)
 def handle_api_exception(error):
