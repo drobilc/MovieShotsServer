@@ -9,9 +9,13 @@ class Movie(object):
         self.title = re.sub("^the", "", self.title, flags=re.IGNORECASE)
         self.title = self.title.strip()
         self.duration = "1h 20min"
+        self.year = ""
+        self.cover = ""
     
     def to_dict(self):
         return {
             "title": self.title,
-            "duration": self.duration
+            "year": self.year,
+            "duration": self.duration,
+            "cover": self.cover
         }

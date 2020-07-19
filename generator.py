@@ -8,6 +8,7 @@ import math, random, statistics
 class DrinkingGame(object):
 
     def __init__(self, movie, subtitles, number_of_players, intoxication_level, number_of_bonus_words=1):
+        self.id = "test"
         self.movie = movie
         self.subtitles = subtitles
 
@@ -155,6 +156,7 @@ class DrinkingGame(object):
             selected_words.append(player_words)
 
         return {
+            "id": self.id,
             "movie": self.movie.to_dict(),
             "words": selected_words,
             "bonus_words": [{"word": word, "occurrences": occurrences} for word, occurrences in self.bonus_words]

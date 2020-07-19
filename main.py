@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 
 from subtitle_services.podnapisi import PodnapisiNet
-# from subtitle_services.opensubtitles import OpenSubtitles
+from subtitle_services.opensubtitles import OpenSubtitles
 
 from generator import DrinkingGame
 from exceptions import *
@@ -10,8 +10,8 @@ import re
 app = Flask(__name__)
 
 # Global variables that are available for all requests
-subtitle_service = PodnapisiNet()
-# subtitle_service = OpenSubtitles()
+# subtitle_service = PodnapisiNet()
+subtitle_service = OpenSubtitles()
 
 @app.errorhandler(ApiException)
 def handle_api_exception(error):
@@ -43,6 +43,24 @@ def game_generation():
     game = DrinkingGame(movie, subtitle, number_of_players, intoxication_level)
 
     return jsonify(game.to_dict())
+
+@app.route('/game/rate')
+def game_rating():
+    game_id = request.args.get('game', default=None, type=str)
+    rating = request.args.get('rating', default=None, type=float)
+    
+    if not game_id:
+        raise InvalidParametersException('game')
+
+    if not rating:
+        raise InvalidParametersException('rating')
+
+    # TODO: Add rating to database
+
+    return jsonify({
+        'game': game_id,
+        'rating': rating
+    })
 
 @app.route('/suggestions')
 def movie_suggestions():
