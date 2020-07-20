@@ -17,3 +17,9 @@ class Movie(object):
             "duration": self.duration,
             "cover": self.cover
         }
+    
+    def __str__(self):
+        return '<Movie title="{}">'.format(self.title)
+    
+    def __repr__(self):
+        return '<Movie title="{}">'.format(self.title)

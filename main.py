@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 
-from subtitle_services.podnapisi import PodnapisiNet
-from subtitle_services.opensubtitles import OpenSubtitles
+from subtitle_services.opensubtitles import OpenSubtitlesService
+import settings
 
 from generator import DrinkingGame
 from exceptions import *
@@ -10,8 +10,11 @@ import re
 app = Flask(__name__)
 
 # Global variables that are available for all requests
-subtitle_service = PodnapisiNet()
-# subtitle_service = OpenSubtitles()
+subtitle_service = OpenSubtitlesService(
+    tmdb_api_key=settings.TMDB_API_KEY,
+    opensubtitles_username=settings.OPENSUBTITLES_USERNAME,
+    opensubtitles_password=settings.OPENSUBTITLES_PASSWORD
+)
 
 @app.errorhandler(ApiException)
 def handle_api_exception(error):
@@ -30,17 +33,22 @@ def game_generation():
     if not movie_title:
         raise InvalidParametersException('movie')
 
-    # Find all possible subtitles for requested movie title
-    movie, possible_subtitles = subtitle_service.search(movie_title)
+    suggestions, _ = subtitle_service.get_suggestions(movie_title)
+    if suggestions is None or len(suggestions) <= 0:
+        raise MovieNotFoundException(movie_title)
 
-    # Perform filtering, in our case simply select the first subtitles
-    selected_subtitles = possible_subtitles[0]
+    movie = suggestions[0]
+    try:
+        subtitle_generator = subtitle_service.get_subtitles(movie)
+    except Exception as e:
+        print(e)
+        raise SubtitlesNotFoundException(movie_title)
 
-    # Download the selected subtitles
-    subtitle = subtitle_service.download(selected_subtitles)
+    if subtitle_generator is None:
+        raise SubtitlesNotFoundException(movie_title)
 
     # Generate a new drinking game
-    game = DrinkingGame(movie, subtitle, number_of_players, intoxication_level)
+    game = DrinkingGame(movie, subtitle_generator, number_of_players, intoxication_level)
 
     return jsonify(game.to_dict())
 
@@ -69,8 +77,8 @@ def movie_suggestions():
     if not keywords:
         raise InvalidParametersException('keywords')
 
-    suggestions = subtitle_service.get_suggestions(keywords)
+    suggestions, response = subtitle_service.get_suggestions(keywords)
     return jsonify([suggestion.to_dict() for suggestion in suggestions])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=4567, debug=True)

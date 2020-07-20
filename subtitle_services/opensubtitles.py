@@ -1,130 +1,101 @@
-import requests
-from bs4 import BeautifulSoup
-import uuid, os.path, re
-from io import BytesIO
-import glob
-import zipfile
+import tmdbsimple as tmdb
+from .movie import Movie
+from datetime import datetime
+from pythonopensubtitles.opensubtitles import OpenSubtitles
+
+import chardet
+
+import urllib.request
 import srt
-import shutil
-from exceptions import *
-from subtitle_services.movie import Movie
+import gzip
+import io
 
-class OpenSubtitles(object):
+class OpenSubtitlesService(object):
     
-    def __init__(self):
-        self.MAIN_URL = "https://www.opensubtitles.org"
-        self.SUGGESTIONS_URL = self.MAIN_URL + "/libs/suggest.php"
-        self.session = requests.Session()
+    def __init__(self, tmdb_api_key='', opensubtitles_username='', opensubtitles_password=''):
+        # Configure the movie database client with our api key
+        tmdb.API_KEY = tmdb_api_key
+
+        # To get images, we must construct the URL from the configuration
+        self.configuration = tmdb.Configuration().info()
+
+        # Import the open subtitles client and login to get the token
+        self.opensubtitles = OpenSubtitles()
+        self.token = self.opensubtitles.login(opensubtitles_username, opensubtitles_password)
+        assert self.token is not None
     
-    def parse_subtitles(self, response):
-        subtitles = []
-
-        html = BeautifulSoup(response, 'html.parser')
-        print(html)
-
-        results_table = html.find('table', {'id': 'search_results'})
-        result_rows = results_table.find_all('tr')
-        for row in result_rows[1:]:
-            columns = row.find_all('td')
-            if len(columns) < 1:
-                continue
-            link_column = columns[0]
-            link = link_column.find('a')
-
-            if link is None or 'href' not in link.attrs:
-                continue
-
-            # Get the subtitle id from received link href
-            id_matches = re.search('\/(\d+)\/', link['href'])
-            if not id_matches:
-                continue
-
-            subtitle_id = id_matches.group(1)
-            download_url = "https://www.opensubtitles.org/en/subtitleserve/sub/{}".format(subtitle_id)
-
-            subtitles.append({
-                "title": link.text.replace('\n', ' '),
-                "url": self.MAIN_URL + link['href'],
-                "download_url": download_url
-            })
-            
-        return subtitles
-
-    def search(self, keyword, language="en"):
-        # First, create a request to suggestions url to get movie id
-        suggestions = self.get_suggestions(keyword)
-        if len(suggestions) <= 0:
-            raise MovieNotFoundException(keyword)
-
-        movie_id = suggestions[0].id
-
-        url = f'https://www.opensubtitles.org/en/search/sublanguageid-eng/idmovie-{movie_id}/sort-7/asc-0'
-        response = self.session.get(url)
-
-        subtitles = self.parse_subtitles(response.text)
-        if len(subtitles) <= 0:
-            raise SubtitlesNotFoundException(keyword)
-
-        return suggestions[0], subtitles
-    
-    def get_suggestions(self, keyword):
-        search_parameters = {
-            "format": "json3",
-            "MovieName": keyword,
-            "SubLanguageID": "eng"
-        }
-        response = self.session.get(self.SUGGESTIONS_URL, params=search_parameters)
-        suggestions = []
-        for suggestion in response.json():
-            suggestions.append(Movie(**suggestion))
-        return suggestions
-    
-    def download(self, subtitle, temporary_path='./subtitles'):
-        headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "accept-encoding": "gzip, deflate, br",
-            "accept-language": "en-US,en;q=0.9,sl;q=0.8,la;q=0.7,da;q=0.6",
-            "cache-control": "no-cache",
-            "dnt": "1",
-            "pragma": "no-cache",
-            "referer": subtitle['url'],
-            "sec-fetch-dest": "document",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "same-site",
-            "sec-fetch-user": "?1",
-            "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
-        }
-
-        # Download zip file from the server
-        response = self.session.get(subtitle['download_url'], headers=headers)
-
-        # Convert received response bytes to file-like object
-        zip_object = BytesIO(response.content)
-
-        # Extract files to a temporary path
-        extract_folder_name = str(uuid.uuid4().hex)
-        extract_folder_path = os.path.join(temporary_path, extract_folder_name)
-        with zipfile.ZipFile(zip_object, 'r') as zip_file:
-            zip_file.extractall(extract_folder_path)
+    def get_imdb_id(self, tmdb_id):
+        movie = tmdb.Movies(tmdb_id)
+        response = movie.info()
         
-        # Get srt file and read it as a file object
-        subtitle_file_glob = os.path.join(extract_folder_path, "*.srt")
-        subtitle_files = glob.glob(subtitle_file_glob)
+        if response['imdb_id']:
+            return int(response['imdb_id'].replace('tt', ''))
+    
+    def construct_cover_url(self, poster_path):
+        return '{}{}{}'.format(self.configuration['images']['secure_base_url'], self.configuration['images']['poster_sizes'][0], poster_path)
+    
+    def parse_movie_suggestion(self, movie):
+        # Extract release year from movie (the movie might not have a release date)
+        movie_year = 0
+        try:
+            release_date = datetime.strptime(movie['release_date'], '%Y-%m-%d')
+            movie_year = release_date.year
+        except Exception:
+            pass
 
-        if len(subtitle_files) <= 0:
-            raise SubtitlesNotFoundException(subtitle['title'])
+        # If movie has a poster, generate its full url movie['poster_path']
+        cover_url = ''
+        if movie['poster_path'] is not None:
+            cover_url = self.construct_cover_url(movie['poster_path'])
 
-        subtitle_file = subtitle_files[0]
+        # Construct a new Movie object that contains all the data which will be
+        # displayed in our application
+        return Movie(movie['id'], movie['title'], year=movie_year, cover=cover_url)
+    
+    def get_suggestions(self, query):
+        # Create a new search object and use it to find movies matching query
+        search = tmdb.Search()
+        response = search.movie(query=query)
+        
+        # After data has been downloaded a list of Movie object should be constructed
+        suggestions = []
+        for movie in search.results:
+            try:
+                # Try to extract the needed information from each result
+                suggestions.append(self.parse_movie_suggestion(movie))
+            except Exception as e:
+                pass
+        
+        # Both, the suggestions and tbdb response should be returned,
+        # so that the response can be saved in local database 
+        return suggestions, response
+    
+    def find_subtitles(self, imdb_id, language='eng'):
+        data = self.opensubtitles.search_subtitles([{'sublanguageid': language, 'imdbid': imdb_id}])
+        
+        if data is None:
+            return None, None
+        
+        subtitles = list(filter(lambda subtitle: subtitle['SubFormat'] == 'srt', data))
+        subtitles = sorted(subtitles, key=lambda subtitle: subtitle['SubDownloadsCnt'], reverse=True)
 
-        # Read first found subtitle file
-        subtitle_generator = None
+        if len(subtitles) > 0:
+            return subtitles[0]['SubDownloadLink'], subtitles
+        
+        return None, None
 
-        with open(subtitle_file, 'r') as subtitle_file:
-            file_content = subtitle_file.read()
-            subtitle_generator = srt.parse(file_content)
-
-        # Finally, remove zip folder
-        shutil.rmtree(extract_folder_path)
-
+    def download_subtitles(self, url):
+        download_url = url.replace('filead', 'subencoding-utf8/filead')
+        response = urllib.request.urlopen(download_url)
+        compressed_file = io.BytesIO(response.read())
+        decompressed_file = gzip.GzipFile(fileobj=compressed_file)
+        
+        file_content = decompressed_file.read().decode('utf-8')
+        subtitle_generator = srt.parse(file_content)
         return subtitle_generator
+
+    def get_subtitles(self, movie, language='eng'):
+        imdb_id = self.get_imdb_id(movie.id)
+        download_link, subtitle_data = self.find_subtitles(imdb_id, language)
+        if download_link is not None:
+            return self.download_subtitles(download_link)
