@@ -142,14 +142,11 @@ class OpenSubtitlesService(object):
                 movies.append(self.parse_movie_suggestion(result))
             except Exception as e:
                 self.flask_app.logger.error('Cannot parse popular result: '.format(e))
-        
-        games = []
-        for movie in movies:
-            games.append({
-                "id": "test",
-                "movie": movie.to_dict(),
-                "words": [],
-                "bonus_words": [],
-            })
 
-        return games
+        trending_movies = []
+        for movie in movies:
+            movie_object = movie.to_dict()
+            movie_object['games'] = []
+            trending_movies.append(movie_object)
+
+        return trending_movies

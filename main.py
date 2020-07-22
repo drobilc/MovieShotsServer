@@ -89,8 +89,8 @@ def game_rating():
         'rating': rating
     })
 
-@app.route('/game/popular')
-def popular_games():
+@app.route('/movie/trending')
+def trending_movies():
     page = request.args.get('page', default=1, type=int)
     return jsonify(subtitle_service.get_popular(page))
 
