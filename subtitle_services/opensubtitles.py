@@ -146,7 +146,14 @@ class OpenSubtitlesService(object):
         trending_movies = []
         for movie in movies:
             movie_object = movie.to_dict()
-            movie_object['games'] = []
+
+            drinking_game = {
+                "id": "test",
+                "words": [],
+                "bonus_words": []
+            }
+
+            movie_object['games'] = [drinking_game for i in range(4)]
             trending_movies.append(movie_object)
 
         return trending_movies
