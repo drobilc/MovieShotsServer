@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 
 from subtitle_services.opensubtitles import OpenSubtitlesService
+from subtitle_services.movie import Movie
 import settings
 
 from generator import DrinkingGame
@@ -30,6 +31,23 @@ def game_generation():
     movie_title = request.args.get('movie', default=None, type=str)
     intoxication_level = request.args.get('intoxication', default=8, type=int)
     number_of_players = request.args.get('players', default=4, type=int)
+
+    # If user taps on a suggestion in app, movie_id is forwarded to the server
+    # alongside movie_title. In this case, we should only try to get subtitles
+    # from know TMDB id.
+    movie_id = request.args.get('movie_id', default=None, type=str)
+    if movie_id is not None:
+        # Construct a movie from received id (with empty title for now, it will
+        # be updated once additional movie information is received)
+        movie = Movie(movie_id, "")
+        subtitle_generator = subtitle_service.get_subtitles(movie)
+        game = DrinkingGame(movie, subtitle_generator, number_of_players, intoxication_level)
+        return jsonify(game.to_dict())
+
+    # If movie_id is not provided, movie_title is used to generate game. If it
+    # is not provided, we should return an expcetion. If movie_title is
+    # provided, we should first find suggestions and use the first suggestion
+    # (the most probable one) to download subtitles.
 
     if not movie_title:
         raise InvalidParametersException('movie')

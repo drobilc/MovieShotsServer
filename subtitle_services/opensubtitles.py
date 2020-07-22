@@ -1,6 +1,5 @@
 import tmdbsimple as tmdb
 from .movie import Movie
-from datetime import datetime
 from pythonopensubtitles.opensubtitles import OpenSubtitles
 
 import urllib.request
@@ -33,7 +32,7 @@ class OpenSubtitlesService(object):
 
         # After additional movie information is received, add it to the Movie
         # object.
-        movie.update_information(response)
+        movie.update_information(self, response)
         
         # If the response contains IMDB id, return both, the ID (as an integer)
         # and the TMDB database movie information
@@ -50,26 +49,9 @@ class OpenSubtitlesService(object):
         )
     
     def parse_movie_suggestion(self, movie):
-        # Extract release year from movie (the movie might not have a release
-        # date). The application will not display movie year if it is set to 0.
-        movie_year = 0
-        try:
-            # The release date from TMDB is in format YYYY-MM-DD, only extract
-            # year. The release date can also be empty so wrap it in try-except
-            # block to ensure this doesn't crash.
-            release_date = datetime.strptime(movie['release_date'], '%Y-%m-%d')
-            movie_year = release_date.year
-        except Exception:
-            pass
-
-        # If movie has a poster, generate its full url from movie['poster_path']
-        cover_url = ''
-        if movie['poster_path'] is not None:
-            cover_url = self.construct_cover_url(movie['poster_path'])
-
-        # Construct a new Movie object that contains all the data which will be
-        # displayed in our application
-        return Movie(movie['id'], movie['title'], year=movie_year, cover=cover_url)
+        constructed_movie = Movie(movie['id'], movie['title'])
+        constructed_movie.update_information(self, movie)
+        return constructed_movie
     
     def get_suggestions(self, query):
         # Create a new search object and use it to find movies matching query
