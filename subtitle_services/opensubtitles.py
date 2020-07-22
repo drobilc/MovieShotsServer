@@ -131,3 +131,25 @@ class OpenSubtitlesService(object):
                         return subtitle_generator
             except Exception as e:
                 self.flask_app.logger.error('Subtitles for {} could not be parsed: {}'.format(movie, e))
+    
+    def get_popular(self, page=1):
+        trending = tmdb.Trending(media_type='movie', time_window='week')
+        results = trending.info(page=page)
+
+        movies = []
+        for result in results['results']:
+            try:
+                movies.append(self.parse_movie_suggestion(result))
+            except Exception as e:
+                self.flask_app.logger.error('Cannot parse popular result: '.format(e))
+        
+        games = []
+        for movie in movies:
+            games.append({
+                "id": "test",
+                "movie": movie.to_dict(),
+                "words": [],
+                "bonus_words": [],
+            })
+
+        return games
