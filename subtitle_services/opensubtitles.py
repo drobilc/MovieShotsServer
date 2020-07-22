@@ -39,18 +39,23 @@ class OpenSubtitlesService(object):
         if response['imdb_id']:
             return int(response['imdb_id'].replace('tt', ''))
     
-    def construct_cover_url(self, poster_path):
+    def construct_cover_url(self, poster_path, poster_size=0):
         # The TMDB image URLs must be constructed from three parts as described
         # at https://developers.themoviedb.org/3/getting-started/images
         return '{}{}{}'.format(
             self.configuration['images']['secure_base_url'],
-            self.configuration['images']['poster_sizes'][0],
+            self.configuration['images']['poster_sizes'][poster_size],
             poster_path
         )
     
     def parse_movie_suggestion(self, movie):
         constructed_movie = Movie(movie['id'], movie['title'])
         constructed_movie.update_information(self, movie)
+        return constructed_movie
+    
+    def parse_trending_movie(self, movie):
+        constructed_movie = Movie(movie['id'], movie['title'])
+        constructed_movie.update_information(self, movie, poster_size=3)
         return constructed_movie
     
     def get_suggestions(self, query):
@@ -139,7 +144,7 @@ class OpenSubtitlesService(object):
         movies = []
         for result in results['results']:
             try:
-                movies.append(self.parse_movie_suggestion(result))
+                movies.append(self.parse_trending_movie(result))
             except Exception as e:
                 self.flask_app.logger.error('Cannot parse popular result: '.format(e))
 

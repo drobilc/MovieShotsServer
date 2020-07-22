@@ -20,8 +20,8 @@ class Movie(object):
         minutes = runtime % 60
         self.duration = "{}h {}min".format(hours, minutes)
     
-    def update_cover_photo(self, subtitle_service, poster_path):
-        self.cover = subtitle_service.construct_cover_url(poster_path)
+    def update_cover_photo(self, subtitle_service, poster_path, poster_size=0):
+        self.cover = subtitle_service.construct_cover_url(poster_path, poster_size)
     
     def update_year(self, release_date):
         self.year = 0
@@ -34,7 +34,7 @@ class Movie(object):
         except Exception as e:
             pass
 
-    def update_information(self, subtitle_service, response):
+    def update_information(self, subtitle_service, response, poster_size=0):
         # When additional movie information is downloaded (that is before the
         # game is constructed), save it
         self.additional_information = response
@@ -49,7 +49,7 @@ class Movie(object):
             self.update_year(response['release_date'])
         
         if 'poster_path' in response and response['poster_path'] is not None:
-            self.update_cover_photo(subtitle_service, response['poster_path'])
+            self.update_cover_photo(subtitle_service, response['poster_path'], poster_size)
 
         if 'runtime' in response and response['runtime'] is not None:
             self.update_duration(response['runtime'])
