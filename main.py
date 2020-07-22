@@ -11,6 +11,7 @@ app = Flask(__name__)
 
 # Global variables that are available for all requests
 subtitle_service = OpenSubtitlesService(
+    app,    # Flask application used for logging
     tmdb_api_key=settings.TMDB_API_KEY,
     opensubtitles_username=settings.OPENSUBTITLES_USERNAME,
     opensubtitles_password=settings.OPENSUBTITLES_PASSWORD
