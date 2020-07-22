@@ -89,6 +89,12 @@ def game_rating():
         'rating': rating
     })
 
+@app.route('/game/popular')
+def popular_games():
+    page = request.args.get('page', default=1, type=int)
+    movie = { "bonus_words": [ { "occurrences": 1, "word": "reconciliation" } ], "id": "test", "movie": { "cover": "https://image.tmdb.org/t/p/w92/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg", "duration": "2h 28min", "id": "27205", "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.", "title": "Inception", "year": 2010 }, "words": [ [ { "occurrences": 8, "word": "maze" } ], [ { "occurrences": 8, "word": "hours" } ], [ { "occurrences": 8, "word": "inception" } ], [ { "occurrences": 8, "word": "relationship" } ] ] }
+    return jsonify([movie for i in range(10)])
+
 @app.route('/suggestions')
 def movie_suggestions():
     keywords = request.args.get('keywords', None)
