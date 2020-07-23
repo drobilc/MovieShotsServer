@@ -11,6 +11,15 @@ subtitle_service = SubtitleService(
     opensubtitles_password=settings.OPENSUBTITLES_PASSWORD
 )
 
+def generate_game(request):
+    return JsonResponse({})
+
+def rate_game(request):
+    return JsonResponse({})
+
+def suggestions(request):
+    return JsonResponse([])
+
 def trending_movies(request):
     page = request.GET.get('page', default=1)
     return JsonResponse(subtitle_service.get_popular(page), safe=False)
