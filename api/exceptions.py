@@ -11,6 +11,10 @@ class ApiException(Exception):
             "message": self.message
         }
 
+class NoApiKeyException(ApiException):
+    def __init__(self):
+        super().__init__(0, "API key required but not provided")
+
 class InvalidParametersException(ApiException):
     def __init__(self, parameter_name):
         super().__init__(1, "Parameter {} required but not provided".format(parameter_name))
