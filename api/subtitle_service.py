@@ -1,19 +1,17 @@
-import tmdbsimple as tmdb
-from .movie import Movie
+# Import API wrappers for both, OpenSubtitles and TMDB
 from pythonopensubtitles.opensubtitles import OpenSubtitles
+import tmdbsimple as tmdb
 
 import urllib.request
 import srt
-import gzip
-import io
+import gzip, io
 
-from exceptions import *
+from .exceptions import *
+from .models import Movie
 
-class OpenSubtitlesService(object):
+class SubtitleService(object):
     
-    def __init__(self, flask_app, tmdb_api_key='', opensubtitles_username='', opensubtitles_password=''):
-        self.flask_app = flask_app
-
+    def __init__(self, tmdb_api_key='', opensubtitles_username='', opensubtitles_password=''):
         # Configure the movie database client with our api key
         tmdb.API_KEY = tmdb_api_key
 
@@ -49,13 +47,13 @@ class OpenSubtitlesService(object):
         )
     
     def parse_movie_suggestion(self, movie):
-        constructed_movie = Movie(movie['id'], movie['title'])
+        constructed_movie = Movie(id=movie['id'], title=movie['title'])
         constructed_movie.update_information(self, movie)
         return constructed_movie
     
     def parse_trending_movie(self, movie):
-        constructed_movie = Movie(movie['id'], movie['title'])
-        constructed_movie.update_information(self, movie, poster_size=3)
+        constructed_movie = Movie(id=movie['id'], title=movie['title'])
+        constructed_movie.update_information(movie)
         return constructed_movie
     
     def get_suggestions(self, query):
@@ -71,7 +69,7 @@ class OpenSubtitlesService(object):
                 # Try to extract the needed information from each result
                 suggestions.append(self.parse_movie_suggestion(movie))
             except Exception as e:
-                self.flask_app.logger.error('Suggestion for query "{}" could not be parsed: {}'.format(query, e))
+                print('Suggestion for query "{}" could not be parsed: {}'.format(query, e))
         
         # Both, the suggestions and TMDB response should be returned,
         # so that the response can be saved in local database 
@@ -135,7 +133,7 @@ class OpenSubtitlesService(object):
                     if subtitle_generator is not None:
                         return subtitle_generator
             except Exception as e:
-                self.flask_app.logger.error('Subtitles for {} could not be parsed: {}'.format(movie, e))
+                print('Subtitles for {} could not be parsed: {}'.format(movie, e))
     
     def get_popular(self, page=1):
         trending = tmdb.Trending(media_type='movie', time_window='week')
@@ -146,7 +144,7 @@ class OpenSubtitlesService(object):
             try:
                 movies.append(self.parse_trending_movie(result))
             except Exception as e:
-                self.flask_app.logger.error('Cannot parse popular result: '.format(e))
+                print('Cannot parse popular result: '.format(e))
 
         trending_movies = []
         for movie in movies:
