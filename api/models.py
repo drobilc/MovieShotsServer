@@ -9,6 +9,9 @@ class User(models.Model):
     api_key = models.CharField(max_length=160)
     ratings = models.ManyToManyField('Game', through='Rating')
 
+    def __str__(self):
+        return '{}'.format(self.api_key)
+
 class Movie(models.Model):
     # For our purposes, each movie must have an id. In our case, the id will be
     # the TMDB movie id which can then be used to access IMDB movie id and
@@ -80,6 +83,9 @@ class Movie(models.Model):
             "duration": self.duration_string(),
             "cover": subtitle_service.construct_cover_url(self.cover, quality) if self.cover is not None else ''
         }
+    
+    def __str__(self):
+        return '[{}] {}'.format(self.id, self.title)
 
 class Game(models.Model):
     # Game information such as how many players are playing this game and how
@@ -94,7 +100,13 @@ class Game(models.Model):
 
     ratings = models.ManyToManyField(User, through='Rating')
 
+    def __str__(self):
+        return 'Game {}'.format(self.id)
+
 class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     rating = models.FloatField()
+
+    def __str__(self):
+        return 'Rating {}'.format(self.id)
