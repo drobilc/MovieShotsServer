@@ -82,18 +82,38 @@ def generate_game(request):
         number_of_players,
         intoxication_level
     )
+    game_json = game.to_dict()
 
-    return JsonResponse(game.to_dict())
+    # If there was an exception during game generation process, Django will exit
+    # here. Once game has been successfully generated, we can save it to local
+    # database. The game id will be generated automatically by Django.
+    game_database = Game(
+        number_of_players=game.number_of_players,
+        intoxication_level=game.intoxication_level,
+        number_of_bonus_words=game.number_of_bonus_words,
+        game_data=game_json,
+        movie=movie
+    )
+    game_database.save()
+
+    return JsonResponse(game_json)
 
 def rate_game(request):
     game_id = request.GET.get('game', default=None)
-    rating = float(request.GET.get('rating', default=None))
+    rating = request.GET.get('rating', default=None)
 
     if not game_id:
         raise InvalidParametersException('game')
 
     if not rating:
         raise InvalidParametersException('rating')
+
+    try:
+        game = Game.objects.get(id=int(game_id))
+        rating_database = Rating(user=request.api_user, game=game, rating=rating)
+        rating_database.save()
+    except Exception:
+        pass
 
     return JsonResponse({
         'game': game_id,
