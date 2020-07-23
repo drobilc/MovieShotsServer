@@ -92,7 +92,8 @@ def generate_game(request):
         intoxication_level=game.intoxication_level,
         number_of_bonus_words=game.number_of_bonus_words,
         game_data=game_json,
-        movie=movie
+        movie=movie,
+        created_by=request.api_user
     )
     game_database.save()
 

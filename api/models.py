@@ -9,6 +9,9 @@ class User(models.Model):
     api_key = models.CharField(max_length=160)
     ratings = models.ManyToManyField('Game', through='Rating')
 
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return '{}'.format(self.api_key)
 
@@ -32,6 +35,9 @@ class Movie(models.Model):
     # (cache) additional movie information that is currently not needed but
     # might be in the future.
     additional_data = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def update_release_date(self, release_date):
         try:
@@ -96,9 +102,13 @@ class Game(models.Model):
     
     game_data = models.TextField()
     
+    created_by = models.ForeignKey(User, related_name='creator', blank=True, null=True, on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
 
     ratings = models.ManyToManyField(User, through='Rating')
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return 'Game {}'.format(self.id)
@@ -107,6 +117,9 @@ class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     rating = models.FloatField()
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return 'Rating {}'.format(self.id)
