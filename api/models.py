@@ -18,7 +18,7 @@ class Movie(models.Model):
     title = models.CharField(max_length=240)
     overview = models.TextField(blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True)
-    release_date = models.DateTimeField(blank=True, null=True)
+    release_date = models.DateField(blank=True, null=True)
     cover = models.TextField(blank=True, null=True)
 
     # Each movie also has a subtitle file from which games are generated. The
