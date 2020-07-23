@@ -2,7 +2,7 @@ import nltk
 from nltk.tag import pos_tag
 from nltk.corpus import stopwords
 
-from exceptions import *
+from .exceptions import *
 import math, random, statistics
 
 class DrinkingGame(object):

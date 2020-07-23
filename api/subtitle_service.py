@@ -30,7 +30,7 @@ class SubtitleService(object):
 
         # After additional movie information is received, add it to the Movie
         # object.
-        movie.update_information(self, response)
+        movie.update_information(response)
         
         # If the response contains IMDB id, return both, the ID (as an integer)
         # and the TMDB database movie information
@@ -46,12 +46,7 @@ class SubtitleService(object):
             poster_path
         )
     
-    def parse_movie_suggestion(self, movie):
-        constructed_movie = Movie(id=movie['id'], title=movie['title'])
-        constructed_movie.update_information(self, movie)
-        return constructed_movie
-    
-    def parse_trending_movie(self, movie):
+    def parse_movie(self, movie):
         constructed_movie = Movie(id=movie['id'], title=movie['title'])
         constructed_movie.update_information(movie)
         return constructed_movie
@@ -67,7 +62,7 @@ class SubtitleService(object):
         for movie in search.results:
             try:
                 # Try to extract the needed information from each result
-                suggestions.append(self.parse_movie_suggestion(movie))
+                suggestions.append(self.parse_movie(movie))
             except Exception as e:
                 print('Suggestion for query "{}" could not be parsed: {}'.format(query, e))
         
@@ -104,13 +99,14 @@ class SubtitleService(object):
         response = urllib.request.urlopen(download_url)
         compressed_file = io.BytesIO(response.read())
         decompressed_file = gzip.GzipFile(fileobj=compressed_file)
+        bytes = decompressed_file.read()
         
         # Read contents of the decompressed file (.srt filetype), ASSUME it is
         # "utf-8" encoded and use the srt parser to parse subtitles file
-        file_content = decompressed_file.read().decode('utf-8')
+        file_content = bytes.decode('utf-8')
         subtitle_generator = srt.parse(file_content)
 
-        return subtitle_generator
+        return bytes, subtitle_generator
 
     def get_subtitles(self, movie, language='eng'):
         """Search subtitles by Movie object and return srt object"""
@@ -129,11 +125,19 @@ class SubtitleService(object):
                 # try to download the next ones.
                 download_link = found_subtitle['SubDownloadLink']
                 if download_link is not None:
-                    subtitle_generator = self.download_subtitles(download_link)
+                    file_content, subtitle_generator = self.download_subtitles(download_link)
                     if subtitle_generator is not None:
-                        return subtitle_generator
+                        return file_content, subtitle_generator
             except Exception as e:
                 print('Subtitles for {} could not be parsed: {}'.format(movie, e))
+            
+            return None, None
+    
+    def get_movie(self, movie_id):
+        # Get information from TMDB using movie_id
+        tmbd_movie = tmdb.Movies(movie_id)
+        response = tmbd_movie.info()
+        return self.parse_movie(response)
     
     def get_popular(self, page=1):
         trending = tmdb.Trending(media_type='movie', time_window='week')
@@ -142,7 +146,7 @@ class SubtitleService(object):
         movies = []
         for result in results['results']:
             try:
-                movies.append(self.parse_trending_movie(result))
+                movies.append(self.parse_movie(result))
             except Exception as e:
                 print('Cannot parse popular result: '.format(e))
 

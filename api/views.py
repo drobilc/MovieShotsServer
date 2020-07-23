@@ -1,7 +1,15 @@
 from django.http import JsonResponse
 from django.conf import settings
+from django.core.files.base import ContentFile
+
+from .models import *
+from .exceptions import *
 
 from .subtitle_service import SubtitleService
+from .generator import DrinkingGame
+
+from io import BytesIO
+import srt
 
 # Global subtitle service for downloading and parsing subtitles that is
 # available to all views in this file
@@ -12,10 +20,85 @@ subtitle_service = SubtitleService(
 )
 
 def generate_game(request):
-    return JsonResponse({})
+    # When generating a game, a few parameters must first be read
+    #   * movie - the name of the movie to generate game for
+    #   * movie_id - the id of the movie the user wants to generate the game for
+    #   * intoxication - number of shots the users wants to drink
+    #   * players - number of players that the game must be generated for
+    movie_title = request.GET.get('movie', default=None)
+    intoxication_level = int(request.GET.get('intoxication', default=8))
+    number_of_players = int(request.GET.get('players', default=4))
+
+    movie_id = request.GET.get('movie_id', default=None)
+
+    # The movie_id argument is only present when user clicks on a suggestion
+    # card inside suggestions adapter in Android app. If both, movie_id and
+    # movie arguments are present, the movie_id parameter is used beucase it
+    # uniquely describes our movie.
+    if movie_id is not None:
+        try:
+            movie = Movie.objects.get(id=movie_id)
+        except Movie.DoesNotExist:
+            # There was an error loading movie from local database, get movie
+            # from TMDB service and save it to local database
+            movie = subtitle_service.get_movie(movie_id)
+            movie.save()
+    else:
+        # If movie_id is None and movie_title isn't, then we must perform two
+        # requests to TMDB API. First, we use movie_title to get a list of
+        # suggestions and then use the most probable suggestion from this list.
+        if movie_title is not None:
+            suggestions, _ = subtitle_service.get_suggestions(movie_title)
+
+            if suggestions is None or len(suggestions) <= 0:
+                raise MovieNotFoundException(movie_title)
+            
+            movie = subtitle_service.get_movie(suggestions[0].id)
+            movie.save()
+        else:
+            raise InvalidParametersException('movie or movie_id')
+
+    # After movie information has either been downloaded or read from local
+    # database, find its subtitles. The subtitles might have already been
+    # downloaded. In this case, only the game needs to be generated.
+    if movie.subtitles_file:
+        print("Subtitles have already been downloaded")
+        subtitle_file_path = movie.subtitles_file.url
+        with open(subtitle_file_path, 'r', encoding='utf-8') as subtitle_file:
+            subtitle_generator = srt.parse(subtitle_file.read())
+    else:
+        subtitle_file_content, subtitle_generator = subtitle_service.get_subtitles(movie)
+
+        file_io = BytesIO(subtitle_file_content)
+        movie.subtitles_file.save(
+            "{}.srt".format(movie.id),
+            content = ContentFile(file_io.getvalue())
+        )
+    
+    # Here, subtitle generator has been created, now we can create game
+    game = DrinkingGame(
+        movie,
+        subtitle_generator,
+        number_of_players,
+        intoxication_level
+    )
+
+    return JsonResponse(game.to_dict())
 
 def rate_game(request):
-    return JsonResponse({})
+    game_id = request.GET.get('game', default=None)
+    rating = float(request.GET.get('rating', default=None))
+
+    if not game_id:
+        raise InvalidParametersException('game')
+
+    if not rating:
+        raise InvalidParametersException('rating')
+
+    return JsonResponse({
+        'game': game_id,
+        'rating': rating
+    })
 
 def suggestions(request):
     return JsonResponse([])
