@@ -152,7 +152,7 @@ class SubtitleService(object):
 
         trending_movies = []
         for movie in movies:
-            movie_object = movie.to_dict()
+            movie_object = movie.to_dict(self, 4)
 
             drinking_game = {
                 "id": "test",

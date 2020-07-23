@@ -71,14 +71,14 @@ class Movie(models.Model):
         minutes = self.duration % 60
         return '{}h {}min'.format(hours, minutes)
         
-    def to_dict(self):
+    def to_dict(self, subtitle_service, quality=0):
         return {
             "id": str(self.id),
             "title": self.title,
             "overview": self.overview if self.overview is not None else '',
             "year": self.year(),
             "duration": self.duration_string(),
-            "cover": self.cover if self.cover is not None else ''
+            "cover": subtitle_service.construct_cover_url(self.cover, quality) if self.cover is not None else ''
         }
 
 class Game(models.Model):

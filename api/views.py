@@ -82,7 +82,7 @@ def generate_game(request):
         number_of_players,
         intoxication_level
     )
-    game_json = game.to_dict()
+    game_json = game.to_dict(subtitle_service)
 
     # If there was an exception during game generation process, Django will exit
     # here. Once game has been successfully generated, we can save it to local
@@ -121,7 +121,13 @@ def rate_game(request):
     })
 
 def suggestions(request):
-    return JsonResponse([])
+    keywords = request.GET.get('keywords', None)
+
+    if not keywords:
+        raise InvalidParametersException('keywords')
+
+    suggestions, response = subtitle_service.get_suggestions(keywords)
+    return JsonResponse([suggestion.to_dict(subtitle_service, 0) for suggestion in suggestions], safe=False)
 
 def trending_movies(request):
     page = request.GET.get('page', default=1)

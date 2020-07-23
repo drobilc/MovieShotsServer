@@ -147,7 +147,7 @@ class DrinkingGame(object):
         
         self.bonus_words = self.choose_bonus_words(common_words)
     
-    def to_dict(self):
+    def to_dict(self, subtitle_service):
         selected_words = []
         for player in self.words:
             player_words = []
@@ -157,7 +157,7 @@ class DrinkingGame(object):
 
         return {
             "id": self.id,
-            "movie": self.movie.to_dict(),
+            "movie": self.movie.to_dict(subtitle_service, 0),
             "words": selected_words,
             "bonus_words": [{"word": word, "occurrences": occurrences} for word, occurrences in self.bonus_words]
         }
