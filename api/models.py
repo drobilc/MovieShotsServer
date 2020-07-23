@@ -5,7 +5,7 @@ class User(models.Model):
     # random UUID. This ensures that each app installation can only vote once
     # per game, though it is possible to clear app data and reset this key.
     api_key = models.CharField(max_length=160)
-    ratings = models.ManyToManyField(Game, through='Rating')
+    ratings = models.ManyToManyField('Game', through='Rating')
 
 class Movie(models.Model):
     # For our purposes, each movie must have an id. In our case, the id will be
