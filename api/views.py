@@ -96,6 +96,7 @@ def generate_game(request):
     )
     game_database.save()
 
+    game_json['id'] = str(game_database.id)
     return JsonResponse(game_json)
 
 def rate_game(request):
