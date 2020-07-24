@@ -12,6 +12,9 @@ class ApiKeyMiddleware:
     def __call__(self, request):
         if request.path.startswith(reverse('admin:index')):
             return self.get_response(request)
+        
+        if request.path.startswith(reverse('asset_links')):
+            return self.get_response(request)
 
         api_key = request.GET.get('api_key', None)
 

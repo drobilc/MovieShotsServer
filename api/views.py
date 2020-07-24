@@ -145,3 +145,6 @@ def game_details(request, game_id):
     except Game.DoesNotExist:
         raise GameNotFoundException(game_id)
     return 
+
+def asset_links(request):
+    return JsonResponse(settings.DIGITAL_ASSET_LINKS_FILE_CONTENT, safe=False)
