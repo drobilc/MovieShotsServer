@@ -10,6 +10,7 @@ from .generator import DrinkingGame
 
 from io import BytesIO
 import srt
+import json
 
 # Global subtitle service for downloading and parsing subtitles that is
 # available to all views in this file
@@ -62,7 +63,6 @@ def generate_game(request):
     # database, find its subtitles. The subtitles might have already been
     # downloaded. In this case, only the game needs to be generated.
     if movie.subtitles_file:
-        print("Subtitles have already been downloaded")
         subtitle_file_path = movie.subtitles_file.url
         with open(subtitle_file_path, 'r', encoding='utf-8') as subtitle_file:
             subtitle_generator = srt.parse(subtitle_file.read())
@@ -91,7 +91,7 @@ def generate_game(request):
         number_of_players=game.number_of_players,
         intoxication_level=game.intoxication_level,
         number_of_bonus_words=game.number_of_bonus_words,
-        game_data=game_json,
+        game_data=json.dumps(game_json),
         movie=movie,
         created_by=request.api_user
     )
@@ -134,3 +134,14 @@ def suggestions(request):
 def trending_movies(request):
     page = request.GET.get('page', default=1)
     return JsonResponse(subtitle_service.get_popular(page), safe=False)
+
+def game_details(request, game_id):
+    try:
+        game = Game.objects.get(pk=game_id)
+        game_json = json.loads(game.game_data)
+        game_json['id'] = str(game.id)
+        print(game_json)
+        return JsonResponse(game_json, safe=False)
+    except Game.DoesNotExist:
+        raise GameNotFoundException(game_id)
+    return 
