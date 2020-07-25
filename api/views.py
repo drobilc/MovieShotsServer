@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.conf import settings
 from django.core.files.base import ContentFile
 
@@ -140,11 +141,37 @@ def game_details(request, game_id):
         game = Game.objects.get(pk=game_id)
         game_json = json.loads(game.game_data)
         game_json['id'] = str(game.id)
-        print(game_json)
         return JsonResponse(game_json, safe=False)
     except Game.DoesNotExist:
         raise GameNotFoundException(game_id)
-    return 
+
+def game_display(request, game_id):
+    try:
+        game = Game.objects.get(pk=game_id)
+        game_json = json.loads(game.game_data)
+        game_json['id'] = str(game.id)
+
+        words, shots, colors = [], [], []
+        hue_difference = 360.0 / len(game_json['words'])
+        for index, player in enumerate(game_json['words']):
+            player_words = [word['word'] for word in player]
+            player_shots = [word['occurrences'] for word in player]
+            words.append(', '.join(player_words))
+            shots.append(sum(player_shots))
+            colors.append('hsl({}, 100%, 70%)'.format(index * hue_difference))
+
+        bonus_words, bonus_colors = [], []
+        hue_difference = 360.0 / len(game_json['bonus_words'])
+        for index, bonus_word in enumerate(game_json['bonus_words']): 
+            bonus_words.append(bonus_word['word'])
+            bonus_colors.append('hsl({}, 100%, 70%)'.format(index * hue_difference))
+        
+        players = list(zip(words, shots, colors))
+        bonus = list(zip(bonus_words, bonus_colors))
+        
+        return render(request, 'share.html', { 'json': game_json, 'game': game, 'players': players, 'bonus_words': bonus })
+    except Exception as e:
+        return render(request, 'get_from_google_play.html')
 
 def asset_links(request):
     return JsonResponse(settings.DIGITAL_ASSET_LINKS_FILE_CONTENT, safe=False)

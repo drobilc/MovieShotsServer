@@ -7,6 +7,7 @@ urlpatterns = [
     path('suggestions', views.suggestions, name='suggestions'),
     path('movie/trending', views.trending_movies, name='trending_movies'),
     path('game/<int:game_id>/', views.game_details, name='game_details'),
+    path('share/<int:game_id>/', views.game_display, name='game_display'),
 
     path('.well-known/assetlinks.json', views.asset_links, name='asset_links')
 ]

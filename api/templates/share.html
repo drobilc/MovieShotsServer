@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The {{ game.movie.title }} drinking game</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #202040;
+            font-family: 'Open Sans', sans-serif;
+        }
+        #container {
+            max-width: 500px;
+            background-color: white;
+            margin: 0 auto;
+            min-height: 90vh;
+            margin-top: 10vh;
+            border-radius: 10vh 10vh 0 0;
+            padding: 4em;
+            box-sizing: border-box;
+            padding-bottom: 20vh;
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+            font-weight: bold;
+        }
+        h1 { font-size: 2.5em; }
+        h2 { font-size: 1.8em; }
+        h3 { font-size: 1.5em; }
+        .spaced-text {
+            font-weight: 600;
+            letter-spacing: 0.5em;
+            text-align: center;
+            font-size: 1em;
+        }
+        #header, #rules, #bonus-hot-words, #google-play {
+            text-align: center;
+        }
+        #additional-info {
+            margin-top: 3vh;
+            font-size: 0.8em;
+            color: #888888;
+            font-weight: 300;
+        }
+        .star {
+            font-size: 12px;
+            margin-left: 2em;
+            margin-right: 2em;
+        }
+        #rules {
+            margin-top: 5vh;
+        }
+        #bonus-hot-words {
+            margin-top: 5vh;
+        }
+        #google-play {
+            margin-top: 8vh;
+        }
+        p {
+            margin-top: 2vh;
+            text-align: left;
+            line-height: 1.6;
+            font-weight: normal;
+            margin-left: 1em;
+            margin-right: 1em;
+            font-size: 1.1em;
+        }
+        .words {
+            margin-top: 3vh;
+        }
+        .word-card, .bonus-hot-word-card {
+            margin: 0 1em 1em 1em;
+            box-sizing: border-box;
+            border-radius: 20px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+            position: relative;
+            padding: 0.4em 1em;
+            padding-left: 80px;
+        }
+        .card-color {
+            width: 40px;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+        .shots {
+            margin-left: 1em;
+            color: #888888;
+        }
+        .word {
+            font-weight: 800;
+            font-size: 1.3em;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+
+        <div id="header">
+            <div class="spaced-text">THE</div>
+            <h1>{{ game.movie.title }}</h1>
+            <h2>drinking game</h2>
+
+            <div id="additional-info">
+                {{ game.movie.duration_string }}
+
+                <i class="star material-icons">star</i>
+
+                {% if game.number_of_players == 1 %}
+                    1 player
+                {% else %}
+                    {{ game.number_of_players }} players
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="rules">
+            <div class="spaced-text">THE RULES</div>
+            <p>Each player should choose their colour and drink every time their word appears in the movie.</p>
+        </div>
+
+        <div class="words">
+            {% for player_words, shots, color in players %}
+                <div class="word-card">
+                    <div class="card-color" style="background-color: {{ color }};"></div>
+                    <div><span>Player {{ forloop.counter }}</span><span class="shots">({{ shots }} shots)</span></div>
+                    <div class="word">{{ player_words }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div id="bonus-hot-words">
+            <h3>Bonus hot words</h3>
+            <p>To make this drinking game even more fun, some additional bonus words have been generated for you. If any of the following bonus words appears, everybody drinks!</p>
+            <div class="words">
+                {% for bonus_word, color in bonus_words %}
+                    <div class="bonus-hot-word-card">
+                        <div class="card-color" style="background-color: {{ color }};"></div>
+                        <div class="word">{{ bonus_word }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="google-play">
+            <h3>Get MovieShots app!</h3>
+            <p>To generate new drinking games get our <strong>MovieShots</strong> app for Android!</p>
+            <div style="margin-top: 1em;">
+                <a href="https://play.google.com/store/apps/details?id=com.movieshots.movieshots" target="_blank" rel="noopener noreferrer">
+                    <img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" alt="Download from Google Play" height="80">
+                </a>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
